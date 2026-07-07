@@ -106,8 +106,23 @@ export default function EditorPage() {
           color: avatarColor(user.id),
         });
 
+        let hasConnectedOnce = false;
+        let wasOffline = false;
+
         hpProvider.on('status', ({ status }: { status: string }) => {
           setSocketConnected(status === 'connected');
+          
+          if (status === 'disconnected') {
+            if (hasConnectedOnce) {
+              toast.error('You are offline. Changes are saved locally.');
+              wasOffline = true;
+            }
+          } else if (status === 'connected') {
+            if (hasConnectedOnce && wasOffline) {
+              toast.success('Back online! Syncing changes...');
+            }
+            hasConnectedOnce = true;
+          }
         });
 
         hpProvider.on('awarenessUpdate', ({ states }: { states: any[] }) => {
@@ -126,6 +141,10 @@ export default function EditorPage() {
         
         hpProvider.on('synced', () => {
           setSaveStatus('saved');
+          if (wasOffline) {
+            toast.success('All offline changes have been synced to the server.');
+            wasOffline = false;
+          }
         });
 
         // Yjs Map for title sync
