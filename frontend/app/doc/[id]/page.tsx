@@ -77,6 +77,22 @@ export default function EditorPage() {
   useEffect(() => {
     if (!user || !id) return;
 
+    let wasOffline = typeof navigator !== 'undefined' ? !navigator.onLine : false;
+    
+    const handleOffline = () => {
+      toast.error('You are offline. Changes are saved locally.');
+      wasOffline = true;
+    };
+
+    const handleOnline = () => {
+      if (wasOffline) {
+        toast.success('Back online! Syncing changes...');
+      }
+    };
+
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+
     getDocument(id)
       .then((data) => {
         setDoc(data);
@@ -106,23 +122,8 @@ export default function EditorPage() {
           color: avatarColor(user.id),
         });
 
-        let hasConnectedOnce = false;
-        let wasOffline = false;
-
         hpProvider.on('status', ({ status }: { status: string }) => {
           setSocketConnected(status === 'connected');
-          
-          if (status === 'disconnected') {
-            if (hasConnectedOnce) {
-              toast.error('You are offline. Changes are saved locally.');
-              wasOffline = true;
-            }
-          } else if (status === 'connected') {
-            if (hasConnectedOnce && wasOffline) {
-              toast.success('Back online! Syncing changes...');
-            }
-            hasConnectedOnce = true;
-          }
         });
 
         hpProvider.on('awarenessUpdate', ({ states }: { states: any[] }) => {
@@ -173,6 +174,8 @@ export default function EditorPage() {
       .finally(() => setLoading(false));
 
     return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
       if (provider) {
         provider.destroy();
       }

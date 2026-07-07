@@ -55,8 +55,13 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
       }),
       Image,
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
         autolink: true,
+        HTMLAttributes: {
+          class: 'text-primary underline cursor-pointer decoration-primary/50 hover:decoration-primary transition-colors',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
       }),
       Youtube.configure({
         inline: false,
@@ -103,13 +108,14 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
 
   const setLink = () => {
     const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+    const url = window.prompt('URL', previousUrl || '');
     if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    const validUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: validUrl }).run();
   };
 
   const addYoutubeVideo = () => {
