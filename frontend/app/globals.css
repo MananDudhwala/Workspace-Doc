@@ -102,3 +102,12 @@
   height: 0;
   pointer-events: none;
 }
+/* ── Editor Visual Pagination ── */
+.editor-a4-pages {
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 0.1) !important;
+}
+.dark .editor-a4-pages {
+  box-shadow: 0 4px 6px rgb(0 0 0 / 0.5) !important;
+}

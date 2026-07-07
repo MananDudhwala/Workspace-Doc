@@ -30,6 +30,7 @@ function getInitials(name: string): string {
 }
 
 function avatarColor(id: string): string {
+  if (!id) return 'bg-gray-500';
   const palette = [
     'bg-violet-500', 'bg-sky-500', 'bg-emerald-500',
     'bg-amber-500', 'bg-rose-500', 'bg-indigo-500',
@@ -309,7 +310,13 @@ export default function EditorPage() {
       <RichEditor
         provider={provider}
         ydoc={ydoc}
-        user={{ name: user.name, color: avatarColor(user.id) }}
+        user={{ 
+          id: user.id, 
+          name: user.name, 
+          email: user.email, 
+          initials: getInitials(user.name), 
+          color: avatarColor(user.id) 
+        }}
         readonly={isReadOnly}
         placeholder="Start writing your document..."
       />

@@ -16,14 +16,15 @@ import { Button } from '@/components/ui/button';
 import { 
   Bold, Italic, Underline as UnderlineIcon, 
   List, ListOrdered, AlignLeft, AlignCenter, 
-  Quote, Undo, Redo 
+  Quote, Undo, Redo, FileMinus 
 } from 'lucide-react';
+import { PageBreak } from '@/lib/extensions/PageBreak';
 import { cn } from '@/lib/utils';
 
 interface RichEditorProps {
   ydoc: Y.Doc;
   provider: HocuspocusProvider;
-  user: { name: string; color: string };
+  user: { id: string; name: string; color: string; email: string; initials: string };
   readonly?: boolean;
   placeholder?: string;
 }
@@ -39,12 +40,13 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
       Placeholder.configure({
         placeholder: placeholder || 'Start writing your document...',
       }),
+      PageBreak,
       Collaboration.configure({
         document: ydoc,
       }),
       CollaborationCursor.configure({
         provider,
-        user: { name: user.name, color: user.color },
+        user: user,
       }),
     ],
     editable: !readonly,
@@ -179,6 +181,18 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => editor.chain().focus().setPageBreak().run()}
+            className="w-8 h-8 p-0"
+            title="Insert Page Break"
+          >
+            <FileMinus size={16} />
+          </Button>
+
+          <div className="w-[1px] h-6 bg-border mx-1" />
+
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
             className="w-8 h-8 p-0"
@@ -204,12 +218,16 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
       <div className="flex-1 flex overflow-hidden">
         <div className="flex-1 flex flex-col overflow-y-auto px-4 md:px-12 py-8 bg-muted/20 items-center">
           <div className={cn(
-            "w-full max-w-4xl bg-card text-card-foreground shadow-sm rounded-xl min-h-full border",
-            readonly && "bg-transparent shadow-none border-none"
+            "w-full shrink-0 editor-a4-pages",
+            "max-w-[210mm] min-h-[297mm]",
+            readonly && "bg-transparent shadow-none border-none filter-none"
           )}>
             <EditorContent 
               editor={editor} 
-              className={cn("p-8 md:p-16 prose prose-invert max-w-none focus:outline-none h-full", readonly && "p-0 md:p-8")} 
+              className={cn(
+                "p-[20mm] md:p-[25.4mm] prose prose-invert max-w-none focus:outline-none h-full break-words", 
+                readonly && "p-0 md:p-[20mm]"
+              )} 
             />
           </div>
         </div>

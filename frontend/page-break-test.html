@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  .editor-wrapper {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    /* CSS hack to simulate pages */
+    /* Page gap every 297mm */
+    background-image: linear-gradient(to bottom, transparent 297mm, #e5e7eb 297mm, #e5e7eb calc(297mm + 20px));
+    background-size: 100% calc(297mm + 20px);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  }
+  .page-content {
+    line-height: 1.5;
+    padding: 20mm;
+  }
+</style>
+</head>
+<body style="background: #f3f4f6; padding: 50px; display: flex; justify-content: center;">
+  <div class="editor-wrapper">
+    <div class="page-content">
+      Content goes here...
+    </div>
+  </div>
+</body>
+</html>

@@ -2,10 +2,12 @@ import { Hocuspocus } from '@hocuspocus/server';
 import { PrismaClient } from '@prisma/client';
 import { TiptapTransformer } from '@hocuspocus/transformer';
 import { generateHTML } from '@tiptap/html';
+import { generateJSON } from '@tiptap/html/server';
 import jwt from 'jsonwebtoken';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
+import { PageBreak } from './extensions/PageBreak';
 import * as Y from 'yjs';
 
 const prisma = new PrismaClient();
@@ -20,6 +22,7 @@ const extensions = [
   StarterKit,
   Underline,
   TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  PageBreak,
 ];
 
 export const hocuspocus = new Hocuspocus({
@@ -82,7 +85,8 @@ export const hocuspocus = new Hocuspocus({
     // If there is no Yjs state but we have old HTML content (migration scenario),
     // we convert it to a Y.Doc and then to an update Uint8Array.
     if (doc.content) {
-      const ydoc = TiptapTransformer.toYdoc(doc.content, 'default', extensions);
+      const json = generateJSON(doc.content, extensions);
+      const ydoc = TiptapTransformer.toYdoc(json, 'default', extensions);
       return Y.encodeStateAsUpdate(ydoc);
     }
 
