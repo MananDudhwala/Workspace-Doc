@@ -13,6 +13,9 @@ import { HocuspocusProvider } from '@hocuspocus/provider';
 import { Toggle } from '@/components/ui/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Bold, Italic, Underline as UnderlineIcon, 
   List, ListOrdered, AlignLeft, AlignCenter, 
@@ -73,6 +76,12 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
   const [isUploadingImage, setIsUploadingImage] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  const [linkModalOpen, setLinkModalOpen] = React.useState(false);
+  const [linkInput, setLinkInput] = React.useState('');
+  
+  const [youtubeModalOpen, setYoutubeModalOpen] = React.useState(false);
+  const [youtubeInput, setYoutubeInput] = React.useState('');
+
   if (!editor) return null;
 
   const setHeading = (level: string | null) => {
@@ -106,23 +115,32 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
     }
   };
 
-  const setLink = () => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl || '');
-    if (url === null) return;
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-    const validUrl = /^https?:\/\//.test(url) ? url : `https://${url}`;
-    editor.chain().focus().extendMarkRange('link').setLink({ href: validUrl }).run();
+  const openLinkModal = () => {
+    const previousUrl = editor.getAttributes('link').href || '';
+    setLinkInput(previousUrl);
+    setLinkModalOpen(true);
   };
 
-  const addYoutubeVideo = () => {
-    const url = window.prompt('YouTube URL');
-    if (url) {
-      editor.commands.setYoutubeVideo({ src: url, width: 640, height: 480 });
+  const applyLink = () => {
+    if (linkInput === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      const validUrl = /^https?:\/\//.test(linkInput) ? linkInput : `https://${linkInput}`;
+      editor.chain().focus().extendMarkRange('link').setLink({ href: validUrl }).run();
     }
+    setLinkModalOpen(false);
+  };
+
+  const openYoutubeModal = () => {
+    setYoutubeInput('');
+    setYoutubeModalOpen(true);
+  };
+
+  const applyYoutube = () => {
+    if (youtubeInput) {
+      editor.commands.setYoutubeVideo({ src: youtubeInput, width: 640, height: 480 });
+    }
+    setYoutubeModalOpen(false);
   };
 
   return (
@@ -236,7 +254,7 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
           <Toggle
             size="sm"
             pressed={editor.isActive('link')}
-            onPressedChange={setLink}
+            onPressedChange={openLinkModal}
             aria-label="Add link"
             title="Add link"
           >
@@ -264,7 +282,7 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
           <Button
             variant="ghost"
             size="sm"
-            onClick={addYoutubeVideo}
+            onClick={openYoutubeModal}
             className="w-8 h-8 p-0"
             title="Add YouTube Video"
           >
@@ -327,6 +345,56 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
           </div>
         </div>
       </div>
+      
+      {/* Link Modal */}
+      <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Insert Link</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="link-url">URL</Label>
+              <Input
+                id="link-url"
+                placeholder="https://example.com"
+                value={linkInput}
+                onChange={(e) => setLinkInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') applyLink(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkModalOpen(false)}>Cancel</Button>
+            <Button onClick={applyLink}>Apply</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* YouTube Modal */}
+      <Dialog open={youtubeModalOpen} onOpenChange={setYoutubeModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Insert YouTube Video</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="youtube-url">YouTube URL</Label>
+              <Input
+                id="youtube-url"
+                placeholder="https://youtube.com/watch?v=..."
+                value={youtubeInput}
+                onChange={(e) => setYoutubeInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') applyYoutube(); }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setYoutubeModalOpen(false)}>Cancel</Button>
+            <Button onClick={applyYoutube}>Insert</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
