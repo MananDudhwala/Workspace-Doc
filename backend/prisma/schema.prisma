@@ -1,0 +1,53 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String          @id @default(cuid())
+  email      String          @unique
+  name       String
+  password   String
+  documents  Document[]
+  sharedWith DocumentShare[]
+  createdAt  DateTime        @default(now())
+}
+
+model Document {
+  id        String          @id @default(cuid())
+  title     String          @default("Untitled Document")
+  content   String          @default("")
+  ownerId   String
+  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  shares    DocumentShare[]
+  upload    Upload?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model DocumentShare {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String   // "read" | "edit"
+  createdAt  DateTime @default(now())
+
+  @@unique([documentId, userId])
+}
+
+model Upload {
+  id         String   @id @default(cuid())
+  filename   String
+  originalName String
+  path       String
+  documentId String   @unique
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
