@@ -6,38 +6,21 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Toggle } from '@/components/ui/toggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { 
+  Bold, Italic, Underline as UnderlineIcon, 
+  List, ListOrdered, AlignLeft, AlignCenter, 
+  Quote, Undo, Redo 
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface RichEditorProps {
   content: string;
   onChange?: (html: string) => void;
   readonly?: boolean;
   placeholder?: string;
-}
-
-function ToolbarButton({
-  onClick,
-  active,
-  disabled,
-  title,
-  children,
-}: {
-  onClick: () => void;
-  active?: boolean;
-  disabled?: boolean;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={`toolbar-btn ${active ? 'active' : ''}`}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-    >
-      {children}
-    </button>
-  );
 }
 
 export function RichEditor({ content, onChange, readonly = false, placeholder }: RichEditorProps) {
@@ -62,175 +45,165 @@ export function RichEditor({ content, onChange, readonly = false, placeholder }:
 
   if (!editor) return null;
 
-  const setHeading = (level: 0 | 1 | 2 | 3) => {
-    if (level === 0) {
+  const setHeading = (level: string | null) => {
+    if (!level) return;
+    if (level === "0") {
       editor.chain().focus().setParagraph().run();
     } else {
-      editor.chain().focus().toggleHeading({ level: level as 1|2|3 }).run();
+      editor.chain().focus().toggleHeading({ level: parseInt(level) as 1|2|3 }).run();
     }
   };
 
   const currentHeading = () => {
-    if (editor.isActive('heading', { level: 1 })) return '1';
-    if (editor.isActive('heading', { level: 2 })) return '2';
-    if (editor.isActive('heading', { level: 3 })) return '3';
-    return '0';
+    if (editor.isActive('heading', { level: 1 })) return "1";
+    if (editor.isActive('heading', { level: 2 })) return "2";
+    if (editor.isActive('heading', { level: 3 })) return "3";
+    return "0";
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+    <div className="flex flex-col flex-1 overflow-hidden">
       {/* Toolbar */}
       {!readonly && (
-        <div className="editor-toolbar">
+        <div className="flex items-center gap-1.5 px-4 py-2 bg-background border-b overflow-x-auto min-h-[52px]">
           {/* Heading selector */}
-          <select
-            className="toolbar-select"
-            value={currentHeading()}
-            onChange={(e) => setHeading(parseInt(e.target.value) as 0|1|2|3)}
-            title="Text style"
-          >
-            <option value="0">Normal text</option>
-            <option value="1">Heading 1</option>
-            <option value="2">Heading 2</option>
-            <option value="3">Heading 3</option>
-          </select>
+          <Select value={currentHeading()} onValueChange={setHeading}>
+            <SelectTrigger className="w-[130px] h-8 flex-shrink-0">
+              <SelectValue placeholder="Text style" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Normal text</SelectItem>
+              <SelectItem value="1">Heading 1</SelectItem>
+              <SelectItem value="2">Heading 2</SelectItem>
+              <SelectItem value="3">Heading 3</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <div className="toolbar-separator" />
+          <div className="w-[1px] h-6 bg-border mx-1" />
 
-          {/* Bold */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            active={editor.isActive('bold')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('bold')}
+            onPressedChange={() => editor.chain().focus().toggleBold().run()}
+            aria-label="Toggle bold"
             title="Bold (⌘B)"
           >
-            <strong>B</strong>
-          </ToolbarButton>
+            <Bold size={16} />
+          </Toggle>
 
-          {/* Italic */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            active={editor.isActive('italic')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('italic')}
+            onPressedChange={() => editor.chain().focus().toggleItalic().run()}
+            aria-label="Toggle italic"
             title="Italic (⌘I)"
           >
-            <em style={{ fontStyle: 'italic' }}>I</em>
-          </ToolbarButton>
+            <Italic size={16} />
+          </Toggle>
 
-          {/* Underline */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            active={editor.isActive('underline')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('underline')}
+            onPressedChange={() => editor.chain().focus().toggleUnderline().run()}
+            aria-label="Toggle underline"
             title="Underline (⌘U)"
           >
-            <u>U</u>
-          </ToolbarButton>
+            <UnderlineIcon size={16} />
+          </Toggle>
 
-          <div className="toolbar-separator" />
+          <div className="w-[1px] h-6 bg-border mx-1" />
 
-          {/* Bullet List */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            active={editor.isActive('bulletList')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('bulletList')}
+            onPressedChange={() => editor.chain().focus().toggleBulletList().run()}
+            aria-label="Toggle bullet list"
             title="Bullet list"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="9" y1="6" x2="20" y2="6"/>
-              <line x1="9" y1="12" x2="20" y2="12"/>
-              <line x1="9" y1="18" x2="20" y2="18"/>
-              <circle cx="4" cy="6" r="1" fill="currentColor"/>
-              <circle cx="4" cy="12" r="1" fill="currentColor"/>
-              <circle cx="4" cy="18" r="1" fill="currentColor"/>
-            </svg>
-          </ToolbarButton>
+            <List size={16} />
+          </Toggle>
 
-          {/* Ordered List */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            active={editor.isActive('orderedList')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('orderedList')}
+            onPressedChange={() => editor.chain().focus().toggleOrderedList().run()}
+            aria-label="Toggle ordered list"
             title="Numbered list"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="10" y1="6" x2="21" y2="6"/>
-              <line x1="10" y1="12" x2="21" y2="12"/>
-              <line x1="10" y1="18" x2="21" y2="18"/>
-              <path d="M4 6h1v4" strokeLinecap="round"/>
-              <path d="M4 10h2" strokeLinecap="round"/>
-              <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" strokeLinecap="round"/>
-            </svg>
-          </ToolbarButton>
+            <ListOrdered size={16} />
+          </Toggle>
 
-          <div className="toolbar-separator" />
+          <div className="w-[1px] h-6 bg-border mx-1" />
 
-          {/* Text align */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            active={editor.isActive({ textAlign: 'left' })}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive({ textAlign: 'left' })}
+            onPressedChange={() => editor.chain().focus().setTextAlign('left').run()}
+            aria-label="Align left"
             title="Align left"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="12" x2="15" y2="12"/>
-              <line x1="3" y1="18" x2="18" y2="18"/>
-            </svg>
-          </ToolbarButton>
+            <AlignLeft size={16} />
+          </Toggle>
 
-          <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            active={editor.isActive({ textAlign: 'center' })}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive({ textAlign: 'center' })}
+            onPressedChange={() => editor.chain().focus().setTextAlign('center').run()}
+            aria-label="Align center"
             title="Align center"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="6" y1="12" x2="18" y2="12"/>
-              <line x1="4" y1="18" x2="20" y2="18"/>
-            </svg>
-          </ToolbarButton>
+            <AlignCenter size={16} />
+          </Toggle>
 
-          <div className="toolbar-separator" />
+          <div className="w-[1px] h-6 bg-border mx-1" />
 
-          {/* Blockquote */}
-          <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            active={editor.isActive('blockquote')}
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('blockquote')}
+            onPressedChange={() => editor.chain().focus().toggleBlockquote().run()}
+            aria-label="Toggle blockquote"
             title="Blockquote"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
-              <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
-            </svg>
-          </ToolbarButton>
+            <Quote size={16} />
+          </Toggle>
 
-          {/* Undo/Redo */}
-          <div className="toolbar-separator" />
+          <div className="w-[1px] h-6 bg-border mx-1" />
 
-          <ToolbarButton
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
+            className="w-8 h-8 p-0"
             title="Undo (⌘Z)"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9 14 4 9 9 4"/>
-              <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
-            </svg>
-          </ToolbarButton>
+            <Undo size={16} />
+          </Button>
 
-          <ToolbarButton
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => editor.chain().focus().redo().run()}
             disabled={!editor.can().redo()}
+            className="w-8 h-8 p-0"
             title="Redo (⌘⇧Z)"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 14 20 9 15 4"/>
-              <path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
-            </svg>
-          </ToolbarButton>
+            <Redo size={16} />
+          </Button>
         </div>
       )}
 
       {/* Editor area */}
-      <div className="editor-main">
-        <div className="editor-page-container">
-          <div className={`editor-paper ${readonly ? 'readonly' : ''}`}>
-            <EditorContent editor={editor} />
+      <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-y-auto px-4 md:px-12 py-8 bg-muted/20 items-center">
+          <div className={cn(
+            "w-full max-w-4xl bg-card text-card-foreground shadow-sm rounded-xl min-h-full border",
+            readonly && "bg-transparent shadow-none border-none"
+          )}>
+            <EditorContent 
+              editor={editor} 
+              className={cn("p-8 md:p-16 prose prose-invert max-w-none focus:outline-none h-full", readonly && "p-0 md:p-8")} 
+            />
           </div>
         </div>
       </div>

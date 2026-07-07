@@ -2,6 +2,12 @@
 
 import React, { useState } from 'react';
 import { shareDocument, revokeShare, ShareEntry } from '@/lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, Trash2, Eye, Pencil, Users } from 'lucide-react';
 
 interface ShareModalProps {
   documentId: string;
@@ -68,87 +74,89 @@ export function ShareModal({
     name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <h2 className="modal-title">Share document</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Share document</DialogTitle>
+          <DialogDescription className="truncate pr-8" title={documentTitle}>
+            "{documentTitle}"
+          </DialogDescription>
+        </DialogHeader>
 
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          &quot;{documentTitle}&quot;
-        </p>
-
-        <form onSubmit={handleShare} style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          <input
+        <form onSubmit={handleShare} className="flex gap-2 items-center">
+          <Input
             type="email"
-            className="input"
             placeholder="Enter email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ flex: 1 }}
+            className="flex-1"
           />
-          <select
-            className="share-role-select"
-            value={role}
-            onChange={(e) => setRole(e.target.value as 'read' | 'edit')}
-            style={{ padding: '10px 8px', borderRadius: 'var(--radius-md)' }}
-          >
-            <option value="edit">Can edit</option>
-            <option value="read">Can view</option>
-          </select>
-          <button type="submit" className="btn btn-primary btn-sm" disabled={loading} style={{ flexShrink: 0, padding: '10px 16px' }}>
-            {loading ? '...' : 'Share'}
-          </button>
+          <Select value={role} onValueChange={(val: 'read' | 'edit') => setRole(val)}>
+            <SelectTrigger className="w-full sm:w-[120px]">
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="edit">Can edit</SelectItem>
+              <SelectItem value="read">Can view</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button type="submit" disabled={loading}>
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Share'}
+          </Button>
         </form>
 
-        {error && <p className="form-error" style={{ marginBottom: 12 }}>⚠ {error}</p>}
+        {error && <p className="text-sm font-medium text-destructive mt-1">⚠ {error}</p>}
 
         {/* People with access */}
-        {shares.length > 0 && (
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-              People with access
-            </p>
-            <div className="share-user-list">
+        <div className="mt-4 border-t pt-4">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <Users size={14} /> People with access
+          </h4>
+          
+          {shares.length > 0 ? (
+            <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1">
               {shares.map((s) => (
-                <div key={s.userId} className="share-user-item">
-                  <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>
-                    {initials(s.user.name)}
+                <div key={s.userId} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(s.user.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col overflow-hidden">
+                      <p className="text-sm font-medium truncate">{s.user.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{s.user.email}</p>
+                    </div>
                   </div>
-                  <div className="share-user-info">
-                    <p className="share-user-name">{s.user.name}</p>
-                    <p className="share-user-email">{s.user.email}</p>
+                  <div className="flex items-center gap-2 pl-2">
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border flex-shrink-0 ${
+                      s.role === 'edit' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                    }`}>
+                      {s.role === 'edit' ? (
+                        <span className="flex items-center gap-1"><Pencil size={10} /> Edit</span>
+                      ) : (
+                        <span className="flex items-center gap-1"><Eye size={10} /> View</span>
+                      )}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRevoke(s.userId, s.user.name)}
+                      title="Revoke access"
+                    >
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
-                  <span className={`badge badge-${s.role}`}>
-                    {s.role === 'edit' ? '✎ Edit' : '👁 View'}
-                  </span>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleRevoke(s.userId, s.user.name)}
-                    title="Revoke access"
-                    style={{ padding: '4px 8px', fontSize: 11 }}
-                  >
-                    Remove
-                  </button>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {shares.length === 0 && (
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
-            No one else has access yet. Share with someone above.
-          </p>
-        )}
-      </div>
-    </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-6 bg-muted/20 rounded-lg border border-dashed border-border/50">
+              No one else has access yet. Share with someone above.
+            </p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

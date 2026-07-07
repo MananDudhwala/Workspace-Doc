@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
+import { Loader2 } from 'lucide-react';
+
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -19,8 +21,8 @@ export default function HomePage() {
   }, [user, loading, router]);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-      <div className="spinner" />
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
     </div>
   );
 }

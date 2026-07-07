@@ -5,7 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Document, createDocument, deleteDocument, getDocuments } from '@/lib/api';
 import { UploadModal } from '@/components/UploadModal';
-import { Toast } from '@/components/Toast';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  FileText, Upload, Plus, Trash2, Users, File, Eye, Pencil, LogOut, Loader2
+} from 'lucide-react';
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -33,11 +39,6 @@ function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-interface ToastState {
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
-
 export default function DashboardPage() {
   const { user, logout, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -45,11 +46,6 @@ export default function DashboardPage() {
   const [shared, setShared] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [toast, setToast] = useState<ToastState | null>(null);
-
-  const showToast = (message: string, type: ToastState['type'] = 'success') => {
-    setToast({ message, type });
-  };
 
   const fetchDocs = useCallback(async () => {
     try {
@@ -57,21 +53,17 @@ export default function DashboardPage() {
       setOwned(data.owned);
       setShared(data.shared);
     } catch {
-      showToast('Failed to load documents', 'error');
+      toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    // Only redirect once auth state has fully resolved and user is confirmed absent
     if (!authLoading && !user) {
       router.replace('/login');
     }
   }, [user, authLoading, router]);
-
-  // Show spinner while auth is loading OR while we have a user but docs haven't loaded yet
-  // This prevents the flash-redirect issue
 
   useEffect(() => {
     if (user) fetchDocs();
@@ -82,7 +74,7 @@ export default function DashboardPage() {
       const doc = await createDocument({ title: 'Untitled Document' });
       router.push(`/doc/${doc.id}`);
     } catch {
-      showToast('Failed to create document', 'error');
+      toast.error('Failed to create document');
     }
   };
 
@@ -92,178 +84,137 @@ export default function DashboardPage() {
     try {
       await deleteDocument(docId);
       setOwned((prev) => prev.filter((d) => d.id !== docId));
-      showToast('Document deleted');
+      toast.success('Document deleted');
     } catch {
-      showToast('Failed to delete document', 'error');
+      toast.error('Failed to delete document');
     }
   };
 
-  // Keep showing spinner while auth resolves — never render dashboard HTML with no user
   if (authLoading || !user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div className="spinner" />
+      <div className="flex items-center justify-center h-screen bg-background text-foreground">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="dashboard-layout">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Nav */}
-      <nav className="dashboard-nav">
-        <div className="dashboard-nav-logo">
-          <div className="dashboard-nav-logo-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <polyline points="14,2 14,8 20,8" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <line x1="16" y1="13" x2="8" y2="13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="16" y1="17" x2="8" y2="17" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+      <nav className="sticky top-0 z-10 flex items-center justify-between h-16 px-6 border-b bg-background/80 backdrop-blur-md">
+        <div className="flex items-center gap-2 font-bold text-lg">
+          <div className="flex items-center justify-center w-8 h-8 bg-primary rounded text-primary-foreground">
+            <FileText size={18} />
           </div>
           WorkspaceDoc
         </div>
 
-        <div className="dashboard-nav-spacer" />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="avatar" title={user.email}>{getInitials(user.name)}</div>
-          <div style={{ lineHeight: 1.3 }}>
-            <p style={{ fontSize: 14, fontWeight: 600 }}>{user.name}</p>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.email}</p>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-semibold text-sm">
+              {getInitials(user.name)}
+            </div>
+            <div className="hidden md:block leading-tight">
+              <p className="text-sm font-semibold">{user.name}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={logout} style={{ marginLeft: 8 }}>
+          <Button variant="ghost" size="sm" onClick={logout}>
+            <LogOut size={16} className="mr-2" />
             Sign out
-          </button>
+          </Button>
         </div>
       </nav>
 
       {/* Main content */}
-      <main className="dashboard-content">
-        <div className="dashboard-header">
+      <main className="flex-1 w-full max-w-6xl mx-auto p-6 md:p-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
           <div>
-            <h1 className="dashboard-title">My Documents</h1>
-            <p className="dashboard-subtitle">
+            <h1 className="text-3xl font-bold tracking-tight">My Documents</h1>
+            <p className="text-muted-foreground mt-1">
               {owned.length + shared.length} document{owned.length + shared.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="dashboard-actions">
-            <button
-              id="upload-btn"
-              className="btn btn-ghost"
-              onClick={() => setShowUpload(true)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="16 16 12 12 8 16"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-              </svg>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Button variant="outline" onClick={() => setShowUpload(true)} className="flex-1 md:flex-none">
+              <Upload size={16} className="mr-2" />
               Import file
-            </button>
-            <button
-              id="new-doc-btn"
-              className="btn btn-primary"
-              onClick={handleNewDoc}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
+            </Button>
+            <Button onClick={handleNewDoc} className="flex-1 md:flex-none">
+              <Plus size={16} className="mr-2" />
               New document
-            </button>
+            </Button>
           </div>
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
-            <div className="spinner" />
+          <div className="flex justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <>
+          <div className="space-y-12">
             {/* Owned docs */}
             <div>
-              <p className="section-heading">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
+              <div className="flex items-center gap-2 mb-6 text-lg font-semibold border-b pb-2">
+                <File size={20} className="text-primary" />
                 My documents ({owned.length})
-              </p>
+              </div>
 
               {owned.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-state-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="12" y1="18" x2="12" y2="12"/>
-                      <line x1="9" y1="15" x2="15" y2="15"/>
-                    </svg>
-                  </div>
-                  <h3>No documents yet</h3>
-                  <p>Create your first document or import a file</p>
+                <div className="flex flex-col items-center justify-center py-16 px-4 border border-dashed rounded-xl bg-card text-card-foreground text-center">
+                  <FileText size={48} className="text-muted-foreground mb-4 opacity-50" />
+                  <h3 className="text-xl font-semibold mb-2">No documents yet</h3>
+                  <p className="text-muted-foreground mb-6">Create your first document or import a file to get started.</p>
+                  <Button onClick={handleNewDoc}>
+                    <Plus size={16} className="mr-2" />
+                    New document
+                  </Button>
                 </div>
               ) : (
-                <div className="docs-grid" style={{ marginBottom: 48 }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {owned.map((doc) => (
-                    <div
-                      key={doc.id}
+                    <Card 
+                      key={doc.id} 
                       id={`doc-${doc.id}`}
-                      className="card card-hover doc-card"
+                      className="group cursor-pointer hover:border-primary/50 hover:shadow-md transition-all flex flex-col relative"
                       onClick={() => router.push(`/doc/${doc.id}`)}
                     >
-                      <div className="doc-card-header">
-                        <div className="doc-card-icon">
-                          {doc.upload ? (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2">
-                              <polyline points="16 16 12 12 8 16"/>
-                              <line x1="12" y1="12" x2="12" y2="21"/>
-                              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                            </svg>
-                          ) : (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14 2 14 8 20 8"/>
-                            </svg>
-                          )}
-                        </div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <span className="badge badge-owner">Owner</span>
-                          {doc.shares && doc.shares.length > 0 && (
-                            <span title={`Shared with ${doc.shares.length} person(s)`} style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                              👥 {doc.shares.length}
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-3">
+                            {doc.upload ? <Upload size={20} /> : <FileText size={20} />}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                              Owner
                             </span>
-                          )}
+                            {doc.shares && doc.shares.length > 0 && (
+                              <span title={`Shared with ${doc.shares.length} person(s)`} className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users size={12} /> {doc.shares.length}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-
-                      <h3 className="doc-card-title">{doc.title}</h3>
-                      <p className="doc-card-preview">{stripHtml(doc.content) || 'Empty document'}</p>
-
-                      <div className="doc-card-meta">
+                        <CardTitle className="text-lg line-clamp-1">{doc.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {stripHtml(doc.content) || 'Empty document'}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="pt-4 border-t text-xs text-muted-foreground flex justify-between items-center bg-muted/20 rounded-b-xl">
                         <span>Updated {formatDate(doc.updatedAt)}</span>
-                        {doc.upload && (
-                          <span style={{ color: 'var(--text-accent)' }}>
-                            📎 {doc.upload.originalName}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="doc-card-actions">
-                        <button
-                          className="doc-card-action-btn delete"
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-10 absolute right-4 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => handleDelete(e, doc.id, doc.title)}
-                          title="Delete document"
                         >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6l-1 14H6L5 6"/>
-                            <path d="M10 11v6M14 11v6"/>
-                            <path d="M9 6V4h6v2"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
+                          <Trash2 size={16} />
+                        </Button>
+                      </CardFooter>
+                    </Card>
                   ))}
                 </div>
               )}
@@ -272,57 +223,56 @@ export default function DashboardPage() {
             {/* Shared docs */}
             {shared.length > 0 && (
               <div>
-                <p className="section-heading">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="18" cy="5" r="3"/>
-                    <circle cx="6" cy="12" r="3"/>
-                    <circle cx="18" cy="19" r="3"/>
-                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-                  </svg>
+                <div className="flex items-center gap-2 mb-6 text-lg font-semibold border-b pb-2">
+                  <Users size={20} className="text-accent-foreground" />
                   Shared with me ({shared.length})
-                </p>
+                </div>
 
-                <div className="docs-grid">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {shared.map((doc) => (
-                    <div
-                      key={doc.id}
+                    <Card 
+                      key={doc.id} 
                       id={`shared-doc-${doc.id}`}
-                      className="card card-hover doc-card"
+                      className="group cursor-pointer hover:border-primary/50 hover:shadow-md transition-all flex flex-col"
                       onClick={() => router.push(`/doc/${doc.id}`)}
                     >
-                      <div className="doc-card-header">
-                        <div className="doc-card-icon">
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-secondary)" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
+                      <CardHeader className="pb-3">
+                        <div className="flex justify-between items-start">
+                          <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500 mb-3">
+                            <FileText size={20} />
+                          </div>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border ${doc.sharedRole === 'edit' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                            {doc.sharedRole === 'edit' ? (
+                              <span className="flex items-center gap-1"><Pencil size={10} /> Edit</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><Eye size={10} /> View</span>
+                            )}
+                          </span>
                         </div>
-                        <span className={`badge badge-${doc.sharedRole}`}>
-                          {doc.sharedRole === 'edit' ? '✎ Can edit' : '👁 View only'}
-                        </span>
-                      </div>
-
-                      <h3 className="doc-card-title">{doc.title}</h3>
-                      <p className="doc-card-preview">{stripHtml(doc.content) || 'Empty document'}</p>
-
-                      <div className="doc-card-meta">
+                        <CardTitle className="text-lg line-clamp-1">{doc.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="flex-1">
+                        <p className="text-sm text-muted-foreground line-clamp-3">
+                          {stripHtml(doc.content) || 'Empty document'}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="pt-4 border-t text-xs text-muted-foreground flex justify-between items-center bg-muted/20 rounded-b-xl">
                         <span>Updated {formatDate(doc.updatedAt)}</span>
                         {doc.sharedBy && (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <div className="avatar" style={{ width: 16, height: 16, fontSize: 8 }}>
+                          <div className="flex items-center gap-1.5" title={`Shared by ${doc.sharedBy.name}`}>
+                            <div className="w-4 h-4 rounded-full bg-primary/20 text-[8px] flex items-center justify-center text-primary font-bold">
                               {getInitials(doc.sharedBy.name)}
                             </div>
-                            {doc.sharedBy.name}
-                          </span>
+                            <span className="truncate max-w-[80px]">{doc.sharedBy.name}</span>
+                          </div>
                         )}
-                      </div>
-                    </div>
+                      </CardFooter>
+                    </Card>
                   ))}
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
 
@@ -330,16 +280,7 @@ export default function DashboardPage() {
       {showUpload && (
         <UploadModal
           onClose={() => setShowUpload(false)}
-          onSuccess={(msg) => showToast(msg)}
-        />
-      )}
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+          onSuccess={(msg) => toast.success(msg)}
         />
       )}
     </div>

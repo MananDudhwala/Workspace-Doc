@@ -3,6 +3,11 @@
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { uploadFile } from '@/lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { UploadCloud, File, AlertCircle, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 
 interface UploadModalProps {
   onClose: () => void;
@@ -53,41 +58,37 @@ export function UploadModal({ onClose, onSuccess }: UploadModalProps) {
   };
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-header">
-          <h2 className="modal-title">Import File</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Close">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>
-          Upload a file to create a new editable document. Your formatting will be preserved where possible.
-        </p>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Import File</DialogTitle>
+          <DialogDescription>
+            Upload a file to create a new editable document. Your formatting will be preserved where possible.
+          </DialogDescription>
+        </DialogHeader>
 
         <div
-          className={`upload-zone ${dragOver ? 'drag-over' : ''}`}
+          className={cn(
+            "flex flex-col items-center justify-center p-8 mt-4 border-2 border-dashed rounded-xl transition-colors cursor-pointer",
+            dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/50",
+            uploading && "opacity-50 pointer-events-none"
+          )}
           onDrop={handleDrop}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onClick={() => fileInputRef.current?.click()}
         >
-          <div className="upload-zone-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" strokeWidth="2">
-              <polyline points="16 16 12 12 8 16"/>
-              <line x1="12" y1="12" x2="12" y2="21"/>
-              <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-            </svg>
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+            <UploadCloud size={24} />
           </div>
-          <h3>Drop your file here</h3>
-          <p>or click to browse</p>
-          <div className="supported-types">
+          <h3 className="text-lg font-semibold mb-1">Drop your file here</h3>
+          <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
+          
+          <div className="flex gap-2">
             {ACCEPTED.map((ext) => (
-              <span key={ext} className="type-chip">{ext}</span>
+              <span key={ext} className="px-2 py-1 text-xs font-medium rounded-md bg-secondary text-secondary-foreground border border-border">
+                {ext}
+              </span>
             ))}
           </div>
         </div>
@@ -97,28 +98,34 @@ export function UploadModal({ onClose, onSuccess }: UploadModalProps) {
           type="file"
           accept={ACCEPTED.join(',')}
           onChange={handleInputChange}
-          style={{ display: 'none' }}
+          className="hidden"
         />
 
         {uploading && (
-          <div className="upload-progress">
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-              Processing file...
-            </p>
-            <div className="upload-progress-bar">
-              <div className="upload-progress-fill" />
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>Processing file...</span>
+              <Loader2 className="w-4 h-4 animate-spin" />
+            </div>
+            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-primary w-2/3 animate-pulse rounded-full" />
             </div>
           </div>
         )}
 
         {error && (
-          <p className="form-error" style={{ marginTop: 12 }}>⚠ {error}</p>
+          <Alert variant="destructive" className="mt-4 py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="ml-2 text-sm">{error}</AlertDescription>
+          </Alert>
         )}
 
-        <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 16, textAlign: 'center' }}>
-          Max file size: 10 MB · Supported: .txt, .md, .docx
-        </p>
-      </div>
-    </div>
+        <DialogFooter className="mt-4 sm:justify-center">
+          <p className="text-xs text-muted-foreground text-center">
+            Max file size: 10 MB &middot; Supported: .txt, .md, .docx
+          </p>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

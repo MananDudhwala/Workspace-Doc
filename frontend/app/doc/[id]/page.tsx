@@ -7,14 +7,15 @@ import { Document, ShareEntry, getDocument, updateDocument } from '@/lib/api';
 import { RichEditor } from '@/components/RichEditor';
 import { ShareModal } from '@/components/ShareModal';
 import { UploadModal } from '@/components/UploadModal';
-import { Toast } from '@/components/Toast';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  ChevronLeft, Check, Loader2, Upload, Share, Eye
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
-
-interface ToastState {
-  message: string;
-  type: 'success' | 'error' | 'info';
-}
 
 function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -33,15 +34,10 @@ export default function EditorPage() {
   const [shares, setShares] = useState<ShareEntry[]>([]);
   const [showShare, setShowShare] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [toast, setToast] = useState<ToastState | null>(null);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContent = useRef('');
   const lastSavedTitle = useRef('');
-
-  const showToast = (message: string, type: ToastState['type'] = 'success') => {
-    setToast({ message, type });
-  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -64,7 +60,7 @@ export default function EditorPage() {
         lastSavedTitle.current = data.title;
       })
       .catch(() => {
-        showToast('Could not load document — access denied or not found', 'error');
+        toast.error('Could not load document — access denied or not found');
         setTimeout(() => router.push('/dashboard'), 2000);
       })
       .finally(() => setLoading(false));
@@ -82,7 +78,7 @@ export default function EditorPage() {
       setSaveStatus('saved');
     } catch (err: unknown) {
       setSaveStatus('unsaved');
-      showToast(err instanceof Error ? err.message : 'Failed to save', 'error');
+      toast.error(err instanceof Error ? err.message : 'Failed to save');
     }
   }, [doc, id]);
 
@@ -122,8 +118,8 @@ export default function EditorPage() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div className="spinner" />
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -131,109 +127,104 @@ export default function EditorPage() {
   if (!doc) return null;
 
   return (
-    <div className="editor-layout">
+    <div className="flex flex-col h-screen bg-secondary/30">
       {/* Top navbar */}
-      <header className="editor-navbar">
-        <button
-          className="editor-navbar-back"
-          onClick={() => router.push('/dashboard')}
-          title="Back to dashboard"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          Docs
-        </button>
+      <header className="flex items-center justify-between h-14 px-4 border-b bg-background sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard')}
+            title="Back to dashboard"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ChevronLeft size={16} className="mr-1" />
+            <span className="hidden sm:inline">Docs</span>
+          </Button>
 
-        <div style={{ width: 1, height: 20, background: 'var(--border-subtle)', flexShrink: 0 }} />
+          <div className="w-[1px] h-5 bg-border flex-shrink-0" />
 
-        <input
-          id="document-title-input"
-          className="editor-title-input"
-          value={title}
-          onChange={(e) => {
-            setTitle(e.target.value);
-            setSaveStatus('unsaved');
-          }}
-          onBlur={handleTitleBlur}
-          placeholder="Untitled Document"
-          disabled={isReadOnly}
-          aria-label="Document title"
-        />
+          <Input
+            id="document-title-input"
+            className="h-8 w-32 sm:w-64 border-transparent hover:border-border focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary focus-visible:bg-secondary/50 bg-transparent font-semibold shadow-none"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setSaveStatus('unsaved');
+            }}
+            onBlur={handleTitleBlur}
+            placeholder="Untitled Document"
+            disabled={isReadOnly}
+            aria-label="Document title"
+          />
+        </div>
 
-        <div className="editor-navbar-right">
+        <div className="flex items-center gap-3">
           {/* Save status */}
-          <div className={`save-status ${saveStatus === 'saved' ? 'saved' : saveStatus === 'saving' ? 'saving' : ''}`}>
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mr-2">
             {saveStatus === 'saved' && (
               <>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Saved
+                <Check size={14} className="text-green-500" />
+                <span className="text-foreground">Saved</span>
               </>
             )}
             {saveStatus === 'saving' && (
               <>
-                <div style={{ width: 10, height: 10, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <Loader2 size={14} className="animate-spin text-primary" />
                 Saving...
               </>
             )}
-            {saveStatus === 'unsaved' && 'Unsaved changes'}
+            {saveStatus === 'unsaved' && (
+              <span className="text-orange-500">Unsaved changes</span>
+            )}
           </div>
 
           {/* Role badge */}
           {isReadOnly && (
-            <span className="badge badge-read" style={{ fontSize: 11 }}>👁 View only</span>
+            <span className="flex items-center gap-1 px-2 py-1 text-[11px] uppercase font-bold tracking-wider rounded bg-orange-500/10 text-orange-500 border border-orange-500/20">
+              <Eye size={12} /> <span className="hidden sm:inline">View only</span>
+            </span>
           )}
 
           {/* Owner info for shared docs */}
           {!doc.isOwner && doc.owner && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div className="avatar" style={{ width: 28, height: 28, fontSize: 10 }} title={doc.owner.email}>
+            <div className="flex items-center gap-2 border-l pl-3 ml-1">
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/20 text-primary text-[10px] font-bold" title={doc.owner.email}>
                 {getInitials(doc.owner.name)}
               </div>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{doc.owner.name}&apos;s doc</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline-block">{doc.owner.name}&apos;s doc</span>
             </div>
           )}
 
           {/* Upload (for import into this doc context — owner only) */}
           {doc.isOwner && (
-            <button
+            <Button
               id="import-file-btn"
-              className="btn btn-ghost btn-sm"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowUpload(true)}
               title="Import file"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="16 16 12 12 8 16"/>
-                <line x1="12" y1="12" x2="12" y2="21"/>
-                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-              </svg>
-              Import
-            </button>
+              <Upload size={16} className="sm:mr-2" />
+              <span className="hidden sm:inline">Import</span>
+            </Button>
           )}
 
           {/* Share (owner only) */}
           {doc.isOwner && (
-            <button
+            <Button
               id="share-btn"
-              className="btn btn-primary btn-sm"
+              size="sm"
               onClick={() => setShowShare(true)}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="18" cy="5" r="3"/>
-                <circle cx="6" cy="12" r="3"/>
-                <circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-              </svg>
-              Share
+              <Share size={14} className="sm:mr-2" />
+              <span className="hidden sm:inline">Share</span>
               {shares.length > 0 && (
-                <span style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0 6px', fontSize: 11 }}>
+                <span className="ml-1.5 bg-primary-foreground/20 text-primary-foreground rounded-full px-1.5 py-0.5 text-[10px] font-bold">
                   {shares.length}
                 </span>
               )}
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -254,23 +245,15 @@ export default function EditorPage() {
           shares={shares}
           onClose={() => setShowShare(false)}
           onSharesUpdated={setShares}
-          onSuccess={(msg) => showToast(msg)}
-          onError={(msg) => showToast(msg, 'error')}
+          onSuccess={(msg) => toast.success(msg)}
+          onError={(msg) => toast.error(msg)}
         />
       )}
 
       {showUpload && (
         <UploadModal
           onClose={() => setShowUpload(false)}
-          onSuccess={(msg) => showToast(msg)}
-        />
-      )}
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+          onSuccess={(msg) => toast.success(msg)}
         />
       )}
     </div>
