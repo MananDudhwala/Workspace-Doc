@@ -2,6 +2,7 @@ import { Hocuspocus } from '@hocuspocus/server';
 import { PrismaClient } from '@prisma/client';
 import { TiptapTransformer } from '@hocuspocus/transformer';
 import { generateHTML } from '@tiptap/html';
+// @ts-ignore
 import { generateJSON } from '@tiptap/html/server';
 import jwt from 'jsonwebtoken';
 import StarterKit from '@tiptap/starter-kit';
