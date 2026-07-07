@@ -65,10 +65,9 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="bg-background/50"
               />
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
@@ -81,7 +80,6 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="bg-background/50"
               />
             </div>
 
@@ -109,15 +107,15 @@ export default function LoginPage() {
               <span>🎭</span> Demo Accounts
             </p>
             <div className="space-y-2 font-mono text-xs text-muted-foreground">
-              <button 
-                onClick={() => fillDemo('alice@demo.com')} 
+              <button
+                onClick={() => fillDemo('alice@demo.com')}
                 className="w-full text-left px-3 py-2 rounded-md hover:bg-background hover:text-foreground transition-colors border border-transparent hover:border-border"
                 type="button"
               >
                 alice@demo.com <span className="text-muted-foreground/50 mx-1">/</span> demo1234
               </button>
-              <button 
-                onClick={() => fillDemo('bob@demo.com')} 
+              <button
+                onClick={() => fillDemo('bob@demo.com')}
                 className="w-full text-left px-3 py-2 rounded-md hover:bg-background hover:text-foreground transition-colors border border-transparent hover:border-border"
                 type="button"
               >

@@ -92,7 +92,7 @@ export function ShareModal({
             required
             className="flex-1"
           />
-          <Select value={role} onValueChange={(val: 'read' | 'edit') => setRole(val)}>
+          <Select value={role} onValueChange={(val: 'read' | 'edit' | null) => { if (val) setRole(val); }}>
             <SelectTrigger className="w-full sm:w-[120px]">
               <SelectValue placeholder="Select role" />
             </SelectTrigger>

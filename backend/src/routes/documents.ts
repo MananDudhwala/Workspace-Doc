@@ -134,6 +134,13 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     const userId = req.userId!;
     const { title, content } = req.body;
 
+    const MAX_DOCUMENT_LENGTH = 50000;
+    if (content !== undefined && content.length > MAX_DOCUMENT_LENGTH) {
+      return res.status(413).json({ 
+        error: `Document exceeds maximum character limit of ${MAX_DOCUMENT_LENGTH}` 
+      });
+    }
+
     const doc = await prisma.document.findUnique({
       where: { id },
       include: { shares: true },

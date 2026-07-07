@@ -1,11 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
+import Collaboration from '@tiptap/extension-collaboration';
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import * as Y from 'yjs';
+import { HocuspocusProvider } from '@hocuspocus/provider';
 import { Toggle } from '@/components/ui/toggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -17,13 +21,14 @@ import {
 import { cn } from '@/lib/utils';
 
 interface RichEditorProps {
-  content: string;
-  onChange?: (html: string) => void;
+  ydoc: Y.Doc;
+  provider: HocuspocusProvider;
+  user: { name: string; color: string };
   readonly?: boolean;
   placeholder?: string;
 }
 
-export function RichEditor({ content, onChange, readonly = false, placeholder }: RichEditorProps) {
+export function RichEditor({ ydoc, provider, user, readonly = false, placeholder }: RichEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -34,13 +39,15 @@ export function RichEditor({ content, onChange, readonly = false, placeholder }:
       Placeholder.configure({
         placeholder: placeholder || 'Start writing your document...',
       }),
+      Collaboration.configure({
+        document: ydoc,
+      }),
+      CollaborationCursor.configure({
+        provider,
+        user: { name: user.name, color: user.color },
+      }),
     ],
-    content,
     editable: !readonly,
-    onUpdate: ({ editor }) => {
-      onChange?.(editor.getHTML());
-    },
-    immediatelyRender: false,
   });
 
   if (!editor) return null;
