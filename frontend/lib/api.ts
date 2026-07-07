@@ -41,6 +41,13 @@ export async function login(email: string, password: string): Promise<{ token: s
   });
 }
 
+export async function loginWithGoogle(token: string): Promise<{ token: string; user: User }> {
+  return request('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
 export async function register(email: string, name: string, password: string): Promise<{ token: string; user: User }> {
   return request('/auth/register', {
     method: 'POST',
@@ -134,6 +141,25 @@ export async function uploadFile(file: File): Promise<{ message: string; documen
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+
+  return res.json();
+}
+
+export async function uploadMedia(file: File): Promise<{ url: string; filename: string }> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_URL}/media/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Media upload failed' }));
     throw new Error(err.error || `HTTP ${res.status}`);
   }
 

@@ -102,4 +102,53 @@ router.get('/me', async (req: Request, res: Response) => {
   }
 });
 
+import { OAuth2Client } from 'google-auth-library';
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// POST /auth/google
+router.post('/google', async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: 'Invalid Google token' });
+    }
+
+    const { email, name = 'User' } = payload;
+
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          authProvider: 'google',
+        },
+      });
+    }
+
+    const jwtToken = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'secret',
+      { expiresIn: '7d' }
+    );
+
+    return res.json({
+      token: jwtToken,
+      user: { id: user.id, email: user.email, name: user.name },
+    });
+  } catch (err) {
+    console.error('Google Auth error:', err);
+    return res.status(500).json({ error: 'Google Authentication failed' });
+  }
+});
+
 export default router;

@@ -14,15 +14,21 @@ export const metadata: Metadata = {
   description: 'Create, edit, and share rich-text documents with your team.',
 };
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id';
+
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased bg-[radial-gradient(ellipse_at_20%_50%,rgba(99,102,241,0.08)_0%,transparent_50%),radial-gradient(ellipse_at_80%_10%,rgba(139,92,246,0.06)_0%,transparent_50%)]">
-        <AuthProvider>{children}</AuthProvider>
+        <GoogleOAuthProvider clientId={clientId}>
+          <AuthProvider>{children}</AuthProvider>
+        </GoogleOAuthProvider>
         <Toaster />
       </body>
     </html>

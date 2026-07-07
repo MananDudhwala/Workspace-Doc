@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import documentRoutes from './routes/documents';
 import shareRoutes from './routes/share';
 import uploadRoutes from './routes/upload';
+import mediaRoutes from './routes/media';
 import { hocuspocus } from './hocuspocus';
 import crossws from 'crossws/adapters/node';
 
@@ -32,6 +33,7 @@ app.use('/auth', authRoutes);
 app.use('/documents', documentRoutes);
 app.use('/documents', shareRoutes);
 app.use('/upload', uploadRoutes);
+app.use('/media', mediaRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

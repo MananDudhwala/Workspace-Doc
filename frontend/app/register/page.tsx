@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { register } from '@/lib/api';
+import { register, loginWithGoogle } from '@/lib/api';
+import { GoogleLogin } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,6 +111,37 @@ export default function RegisterPage() {
               )}
             </Button>
           </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                try {
+                  setLoading(true);
+                  if (!credentialResponse.credential) throw new Error('No credential');
+                  const { token, user } = await loginWithGoogle(credentialResponse.credential);
+                  login(token, user);
+                  window.location.href = '/dashboard';
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : 'Google Registration failed');
+                  setLoading(false);
+                }
+              }}
+              onError={() => {
+                setError('Google Registration Failed');
+              }}
+              theme="filled_black"
+              shape="pill"
+            />
+          </div>
         </CardContent>
         <CardFooter className="flex justify-center pb-8 border-t pt-6 mt-2">
           <p className="text-sm text-muted-foreground">

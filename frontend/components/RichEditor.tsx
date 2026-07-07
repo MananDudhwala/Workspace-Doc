@@ -16,8 +16,13 @@ import { Button } from '@/components/ui/button';
 import { 
   Bold, Italic, Underline as UnderlineIcon, 
   List, ListOrdered, AlignLeft, AlignCenter, 
-  Quote, Undo, Redo, FileMinus 
+  Quote, Undo, Redo, FileMinus,
+  Image as ImageIcon, Link as LinkIcon, Video as YoutubeIcon, Loader2
 } from 'lucide-react';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import Youtube from '@tiptap/extension-youtube';
+import { uploadMedia } from '@/lib/api';
 import { PageBreak } from '@/lib/extensions/PageBreak';
 import { cn } from '@/lib/utils';
 
@@ -48,9 +53,20 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
         provider,
         user: user,
       }),
+      Image,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+      Youtube.configure({
+        inline: false,
+      }),
     ],
     editable: !readonly,
   });
+
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   if (!editor) return null;
 
@@ -68,6 +84,39 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
     if (editor.isActive('heading', { level: 2 })) return "2";
     if (editor.isActive('heading', { level: 3 })) return "3";
     return "0";
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsUploadingImage(true);
+      const res = await uploadMedia(file);
+      editor.chain().focus().setImage({ src: res.url }).run();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const setLink = () => {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const addYoutubeVideo = () => {
+    const url = window.prompt('YouTube URL');
+    if (url) {
+      editor.commands.setYoutubeVideo({ src: url, width: 640, height: 480 });
+    }
   };
 
   return (
@@ -175,6 +224,46 @@ export function RichEditor({ ydoc, provider, user, readonly = false, placeholder
           >
             <Quote size={16} />
           </Toggle>
+
+          <div className="w-[1px] h-6 bg-border mx-1" />
+
+          <Toggle
+            size="sm"
+            pressed={editor.isActive('link')}
+            onPressedChange={setLink}
+            aria-label="Add link"
+            title="Add link"
+          >
+            <LinkIcon size={16} />
+          </Toggle>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploadingImage}
+            className="w-8 h-8 p-0"
+            title="Upload Image"
+          >
+            {isUploadingImage ? <Loader2 className="animate-spin" size={16} /> : <ImageIcon size={16} />}
+          </Button>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleImageUpload} 
+            accept="image/*" 
+            className="hidden" 
+          />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={addYoutubeVideo}
+            className="w-8 h-8 p-0"
+            title="Add YouTube Video"
+          >
+            <YoutubeIcon size={16} />
+          </Button>
 
           <div className="w-[1px] h-6 bg-border mx-1" />
 
