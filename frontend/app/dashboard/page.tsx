@@ -39,6 +39,7 @@ function stripHtml(html: string): string {
 function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 }
+console.log("dumy")
 
 export default function DashboardPage() {
   const { user, logout, loading: authLoading } = useAuth();
