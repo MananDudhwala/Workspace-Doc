@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
+import {
   FileText, Upload, Plus, Trash2, Users, File, Eye, Pencil, LogOut, Loader2
 } from 'lucide-react';
 
@@ -29,6 +29,7 @@ function formatDate(dateStr: string) {
 }
 
 function stripHtml(html: string): string {
+  if (!html) return '';
   if (typeof window === 'undefined') return '';
   const div = document.createElement('div');
   div.innerHTML = html;
@@ -173,8 +174,8 @@ export default function DashboardPage() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {owned.map((doc) => (
-                    <Card 
-                      key={doc.id} 
+                    <Card
+                      key={doc.id}
                       id={`doc-${doc.id}`}
                       className="group cursor-pointer hover:border-primary/50 hover:shadow-md transition-all flex flex-col relative"
                       onClick={() => router.push(`/doc/${doc.id}`)}
@@ -197,17 +198,17 @@ export default function DashboardPage() {
                         </div>
                         <CardTitle className="text-lg line-clamp-1">{doc.title}</CardTitle>
                       </CardHeader>
-                      <CardContent className="flex-1">
+                      {/* <CardContent className="flex-1">
                         <p className="text-sm text-muted-foreground line-clamp-3">
                           {stripHtml(doc.content) || 'Empty document'}
                         </p>
-                      </CardContent>
+                      </CardContent> */}
                       <CardFooter className="pt-4 border-t text-xs text-muted-foreground flex justify-between items-center bg-muted/20 rounded-b-xl">
                         <span>Updated {formatDate(doc.updatedAt)}</span>
-                        
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 z-10 absolute right-4 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={(e) => handleDelete(e, doc.id, doc.title)}
                         >
@@ -230,8 +231,8 @@ export default function DashboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {shared.map((doc) => (
-                    <Card 
-                      key={doc.id} 
+                    <Card
+                      key={doc.id}
                       id={`shared-doc-${doc.id}`}
                       className="group cursor-pointer hover:border-primary/50 hover:shadow-md transition-all flex flex-col"
                       onClick={() => router.push(`/doc/${doc.id}`)}

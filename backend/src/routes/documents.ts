@@ -16,6 +16,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       select: {
         id: true,
         title: true,
+        content: true,
         createdAt: true,
         updatedAt: true,
         owner: { select: { id: true, name: true, email: true } },
@@ -37,6 +38,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
           select: {
             id: true,
             title: true,
+            content: true,
             createdAt: true,
             updatedAt: true,
             owner: { select: { id: true, name: true, email: true } },
