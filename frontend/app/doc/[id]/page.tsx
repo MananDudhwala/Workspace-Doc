@@ -15,6 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { HocuspocusProvider } from '@hocuspocus/provider';
 import * as Y from 'yjs';
+import { IndexeddbPersistence } from 'y-indexeddb';
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved';
 
@@ -65,6 +66,7 @@ export default function EditorPage() {
   // We initialize the Yjs document and the provider
   const ydoc = useMemo(() => new Y.Doc(), []);
   const [provider, setProvider] = useState<HocuspocusProvider | null>(null);
+  const [idbProvider, setIdbProvider] = useState<IndexeddbPersistence | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -90,6 +92,10 @@ export default function EditorPage() {
           document: ydoc,
           token: token || undefined,
         });
+
+        // Initialize offline persistence
+        const indexeddbProvider = new IndexeddbPersistence(id, ydoc);
+        setIdbProvider(indexeddbProvider);
 
         // Set our awareness data (our cursor info)
         hpProvider.setAwarenessField('user', {
@@ -150,6 +156,9 @@ export default function EditorPage() {
     return () => {
       if (provider) {
         provider.destroy();
+      }
+      if (idbProvider) {
+        idbProvider.destroy();
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
