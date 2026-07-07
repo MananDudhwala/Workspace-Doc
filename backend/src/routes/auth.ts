@@ -97,7 +97,8 @@ router.get('/me', async (req: Request, res: Response) => {
     });
     if (!user) return res.status(404).json({ error: 'User not found' });
     return res.json({ user });
-  } catch {
+  } catch (err) {
+    console.error('JWT Verification Error in /auth/me:', err);
     return res.status(401).json({ error: 'Invalid token' });
   }
 });
@@ -119,6 +120,7 @@ router.post('/google', async (req: Request, res: Response) => {
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.email) {
+      console.error('Invalid Google payload:', payload);
       return res.status(400).json({ error: 'Invalid Google token' });
     }
 
